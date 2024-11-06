@@ -1,9 +1,16 @@
 ---
 title: "Lab 7: Functions + Fish"
-author: "Your name here!"
-format: html
+author: "Eva Moylan"
+date: "11/6/24"
+format: 
+  html:  
+    embed-resources: true
+    code-tools: true
 editor: source
-embed-resources: true
+execute: 
+  echo: true
+code-fold: true
+theme: sandstone
 ---
 
 The goal of this lab is learn more about exploring missing data and writing
@@ -12,7 +19,12 @@ modular code.
 ```{r}
 #| label: setup
 
+library(tidyverse)
+library(here)
 
+fish_data <- read_csv(here("data", "BlackfootFish.csv"))
+
+glimpse(fish_data)
 ```
 
 ## The Data
@@ -44,6 +56,15 @@ measurement errors.
 
 ```{r}
 #| label: find-missing-values
+
+fish_data |>
+  summarize(
+    across(.col = trip:species,
+           .fns = ~is.na(.x))
+  ) |>
+  filter(
+    if_any(.col = trip:species,
+         .fns = ~.x != 0))
 
 ```
 
