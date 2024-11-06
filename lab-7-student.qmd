@@ -24,7 +24,7 @@ library(here)
 
 fish_data <- read_csv(here("data", "BlackfootFish.csv"))
 
-glimpse(fish_data)
+view(fish_data)
 ```
 
 ## The Data
@@ -58,13 +58,13 @@ measurement errors.
 #| label: find-missing-values
 
 fish_data |>
-  summarize(
-    across(.col = trip:species,
+  reframe(
+    across(.col = everything(),
            .fns = ~is.na(.x))
   ) |>
   filter(
-    if_any(.col = trip:species,
-         .fns = ~.x != 0))
+    if_any(.col = everything(),
+           .fns = ~.x != 0))
 
 ```
 
@@ -73,6 +73,17 @@ fish_data |>
 ```{r}
 #| label: visual-of-missing-values-over-time
 
+fish_data |>
+  summarize(
+    across(.col = everything(),
+           .fns = ~is.na(.x))
+  ) |>
+  filter(
+    if_any(.col = everything(),
+           .fns = ~.x != 0)) +
+  ggplot(mapping = aes(x = ))
+
+  
 ```
 
 ## Rescaling the Data
