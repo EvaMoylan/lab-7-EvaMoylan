@@ -1,15 +1,27 @@
 ---
 title: "Challenge 7: Incorporating Multiple Inputs"
 subtitle: "Functions + Fish"
-author: "Your name here!"
-format: html
+author: "Eva Moylan"
+date: "11/20/24"
+format: 
+  html:  
+    embed-resources: true
+    code-tools: true
 editor: source
-embed-resources: true
+execute: 
+  echo: true
+code-fold: true
+theme: sandstone
 ---
 
 ```{r}
 #| label: setup
+#| message: false
 
+library(tidyverse)
+library(here)
+
+fish_data <- read_csv(here("data", "BlackfootFish.csv"))
 
 ```
 
@@ -25,6 +37,9 @@ $$\text{condition index} = \frac{weight}{length^3} \times 100$$
 
 ```{r}
 #| label: transform-data-to-have-correct-units
+
+fish_clean <- fish_data |>
+  mutate(length = length/10)
 
 ```
 
@@ -43,13 +58,36 @@ If you are struggling with the structure of your function, I would suggest readi
 ```{r}
 #| label: function-to-change-impossible-measurements-to-NA
 
+cutoffs <- function(x, min, max) {
+  
+  if(!is.numeric(x)) {
+    stop("Input must be numeric")
+  }
+  
+  case_when(x < min ~ NA, #If x is less than the minimum or greater than the max..
+            x > max ~ NA, 
+            .default = x) #Else, keep as x
+}
+
 ```
+
+*Question 2 Reflection: I originally used if_else to create the cutoffs function, however because I am trying to replace 'x' with NA if it is less than the minimum or greater than the max, case_when would be the better function to use. In the future, if I am considering using if_else for two conditions at once, I will use case_when, which is the most modern syntax.*
 
 **3. After consulting the [Montana Record Table](https://fwp.mt.gov/fish/anglingData/records) for the four species of trout included in these data, I have conjectured that it is unlikely to have measurements for fish below 5 cm and above 80 cm in length or below 10 g and above 4,000 g in weight. Use your function to modify the `length` and `weight` columns of the `fish` dataset based on my cutoffs.**
 
 ```{r}
 #| label: modify-impossible-values-of-length-weight
 
+#Remove below 5cm and above 80cm
+#Remove below 10g and above 4,000g
+
+fish_clean <- fish_clean |>
+  mutate(length = cutoffs(length,
+                          5,
+                          80),
+         weight = cutoffs(weight,
+                          10,
+                          4000)) 
 ```
 
 **3. Write a function to calculate the condition index of a fish, given inputs of weight and length.**
@@ -63,7 +101,22 @@ dataset and variable names as inputs)!
 ```{r}
 #| label: condition-function
 
+condition.index <- function(x, y) {
+   
+  if(!is.numeric(x)) {
+    stop("Input must be numeric")
+   }
+  
+  if(!is.numeric(y)) {
+    stop("Input must be numeric")
+  }
+
+  return((x/(y^3))*100)
+}
+
 ```
+
+*Question 3 Reflection: I originally forgot to specify the required datatype for 'y', so I added a stop within the function if the input for 'y' is not numeric. I also put my calculation within the return function to make my function formatting cleaner. In the future, I will make sure to double check I've included the necessary checks for all of my function inputs!*
 
 **4. Make a thoughtful visualization of how fish conditions have varied over the duration of this study.**
 
@@ -75,5 +128,33 @@ dataset and variable names as inputs)!
 
 ```{r}
 #| label: condition-indices-over-time
+#| warning: false
+#| fig-cap: "Figure 1. The distribution of trout condition indeces across study years 1988 to 2006 in the Johsrud and Scotty Brown study regions. The green dotted lines represent the healthy index range of 0.8 to 1."
+
+fish_clean |>
+  mutate(condition = condition.index(weight, 
+                                     length)) |>
+  filter(condition <= 2.5) |>
+  ggplot(mapping = aes(x = year,
+                       y = condition,
+                       color = section)) +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  facet_wrap(~ section) +
+  scale_color_manual(values = c("tomato", "steelblue")) +
+  scale_x_continuous(n.breaks = 10) +
+  theme_bw() +
+  geom_hline(yintercept = c(1, 0.8), 
+             linetype = "dashed", 
+             color = "darkolivegreen") +
+  labs(x = "Study Year",
+       y = NULL,
+       subtitle = "Condition Index",
+       title = "Fish Condition Across Study Sites",
+       fill = "Study Section") +
+  theme(aspect.ratio = 0.75,
+        axis.text.x = element_text(angle = 45, 
+                                   vjust = 0.75),
+        legend.position = "none")
 
 ```
+*Question 4 Reflection: The healthy condition index range for fish is 0.8 to 1 and the majority of fish in this dataset have a condition index between 0 and 2.5. So, to make the visualization more meaningful I removed outliers with an index above 2.5. I also added dotted lines to the plot to show the healthy index range. In the future, when making plots I will make sure to consider if the data I'm using for a visualization make sense in the context of what the data are representing.*
